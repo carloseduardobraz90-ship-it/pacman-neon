@@ -1,0 +1,336 @@
+body {
+    background-color: #050811;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+/* TÍTULO ESTILIZADO NEON ARCADE */
+.game-title {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #facc15;
+    text-transform: uppercase;
+    font-family: 'Courier New', Courier, monospace;
+    text-shadow: 
+        0 0 10px rgba(250, 204, 21, 0.8),
+        0 0 20px rgba(250, 204, 21, 0.5),
+        0 0 30px rgba(250, 204, 21, 0.3),
+        0 4px 0 #ca8a04;
+    animation: title-glow 2s infinite alternate;
+}
+
+@keyframes title-glow {
+    from {
+        text-shadow: 
+            0 0 10px rgba(250, 204, 21, 0.8),
+            0 0 20px rgba(250, 204, 21, 0.5),
+            0 4px 0 #ca8a04;
+    }
+    to {
+        text-shadow: 
+            0 0 15px rgba(250, 204, 21, 1),
+            0 0 30px rgba(234, 179, 8, 0.8),
+            0 0 45px rgba(234, 179, 8, 0.4),
+            0 4px 0 #ca8a04;
+    }
+}
+
+/* PAINEL DE STATUS MODERNO */
+#score-board {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.stat-box {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #1e3a8a;
+    border-radius: 8px;
+    padding: 6px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: inset 0 0 6px rgba(59, 130, 246, 0.3), 0 4px 10px rgba(0, 0, 0, 0.5);
+    min-width: 70px;
+}
+
+.stat-box .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #60a5fa;
+    margin-bottom: 2px;
+}
+
+.stat-box .value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #f3f4f6;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#game-container {
+    position: relative;
+    border: 3px solid #3b82f6;
+    background-color: #030712;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    overflow: hidden;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(21, 20px);
+    grid-template-rows: repeat(21, 20px);
+}
+
+.cell {
+    width: 20px;
+    height: 20px;
+    position: relative;
+}
+
+/* Paredes com visual de Neon */
+.wall {
+    background-color: #1e3a8a;
+    border: 1px solid #3b82f6;
+    box-shadow: inset 0 0 4px rgba(59, 130, 246, 0.8);
+    border-radius: 3px;
+}
+
+/* Bolinhas normais brilhantes */
+.dot::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    background: #fde047;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px #fde047;
+}
+
+/* Super Bolinhas (Bônus) */
+.power-dot::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px #ffffff, 0 0 20px #38bdf8;
+    animation: pulse-power 0.6s infinite alternate;
+}
+
+@keyframes pulse-power {
+    from { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+    to { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+/* Pac-Man Moderno com Efeito Brilho */
+.pacman {
+    width: 17px;
+    height: 17px;
+    background-color: #facc15;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    box-shadow: 0 0 8px #facc15;
+}
+
+.pacman::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #030712;
+    clip-path: polygon(50% 50%, 100% 30%, 100% 70%);
+    animation: chomp 0.2s infinite alternate;
+    top: 0;
+    left: 0;
+}
+
+@keyframes chomp {
+    0% { clip-path: polygon(50% 50%, 100% 15%, 100% 85%); }
+    100% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%); }
+}
+
+.pacman.right { transform: translate(-50%, -50%) rotate(0deg); }
+.pacman.down { transform: translate(-50%, -50%) rotate(90deg); }
+.pacman.left { transform: translate(-50%, -50%) rotate(180deg); }
+.pacman.up { transform: translate(-50%, -50%) rotate(270deg); }
+
+/* Fantasmas Estilizados */
+.ghost {
+    width: 17px;
+    height: 17px;
+    border-radius: 50% 50% 30% 30%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 3px;
+    box-sizing: border-box;
+}
+
+.ghost::before, .ghost::after {
+    content: "";
+    width: 3px;
+    height: 5px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: inset 1px 1px 0px #1e1b4b;
+}
+
+.red { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+.pink { background-color: #f472b6; box-shadow: 0 0 8px #f472b6; }
+.cyan { background-color: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
+.orange { background-color: #fb923c; box-shadow: 0 0 8px #fb923c; }
+
+.frightened {
+    background-color: #3b82f6 !important;
+    box-shadow: 0 0 10px #3b82f6 !important;
+}
+
+.frightened::before, .frightened::after {
+    background-color: #fed7aa;
+    box-shadow: none;
+    width: 2px;
+    height: 3px;
+}
+
+/* Cereja de Bônus Neon */
+.cherry {
+    width: 9px;
+    height: 9px;
+    background-color: #f43f5e;
+    border-radius: 50%;
+    position: absolute;
+    top: 55%;
+    left: 30%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 8px #f43f5e;
+    z-index: 8;
+    animation: pulse-cherry 0.5s infinite alternate;
+}
+
+.cherry::after {
+    content: "";
+    width: 9px;
+    height: 9px;
+    background-color: #f43f5e;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 10px;
+    box-shadow: 0 0 8px #f43f5e;
+}
+
+.cherry::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-top: 2px solid #22c55e;
+    border-right: 2px solid #22c55e;
+    border-top-right-radius: 10px;
+    position: absolute;
+    top: -9px;
+    left: 4px;
+    box-shadow: 2px -2px 4px rgba(34, 197, 94, 0.4);
+}
+
+@keyframes pulse-cherry {
+    from { transform: translate(-50%, -50%) scale(0.95); }
+    to { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Telas de Alerta / Fim de Jogo */
+#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(3, 7, 18, 0.95);
+    padding: 25px 40px;
+    border: 2px solid #38bdf8;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 20;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+}
+
+#message h2 {
+    margin-top: 0;
+    color: #38bdf8;
+    letter-spacing: 1px;
+}
+
+.hidden {
+    display: none;
+}
+
+#start-button {
+    margin-top: 15px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transition: all 0.2s ease;
+}
+
+#start-button:hover {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
+    transform: translateY(-1px);
+}#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(3, 7, 18, 0.95);
+    padding: 25px 40px;
+    border: 2px solid #38bdf8;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 20;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#message.hidden {
+    display: none !important;
+}
