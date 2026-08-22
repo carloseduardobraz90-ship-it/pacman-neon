@@ -1,396 +1,461 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const board = document.getElementById('game-board');
-    const scoreDisplay = document.getElementById('score');
-    const livesDisplay = document.getElementById('lives');
-    const levelDisplay = document.getElementById('level');
-    const messageContainer = document.getElementById('message');
-    const startButton = document.getElementById('start-button');
+const board = document.getElementById("game-board");
+const scoreElement = document.getElementById("score");
+const livesElement = document.getElementById("lives");
+const levelElement = document.getElementById("level");
+const message = document.getElementById("message");
+const startButton = document.getElementById("start-button");
 
-    // Configurações do Mapa (21x21)
-    // 1: Parede, 0: Bolinha, 2: Espaço Vazio, 3: Super Bolinha, 4: Casa dos Fantasmas
-    const layout = [
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,3,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,3,1,
-        1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,
-        1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,
-        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-        1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1,
-        1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,
-        1,1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1,1,
-        2,2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2,2,
-        1,1,1,1,1,0,1,2,1,1,4,1,1,2,1,0,1,1,1,1,1,
-        2,2,2,2,2,0,2,2,1,4,4,4,1,2,2,0,2,2,2,2,2,
-        1,1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1,1,
-        2,2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2,2,
-        1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,
-        1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,
-        1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,
-        1,3,0,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,0,3,1,
-        1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,
-        1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,
-        1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-    ];
+// ======================================================
+// MAPA CLÁSSICO
+// ======================================================
+const map = [
+    "#####################",
+    "#o.................o#",
+    "#.###.###.#.###.###.#",
+    "#.# #.#...#...#.# #.#",
+    "#.###.#.#####.#.###.#",
+    "#.....#...#...#.....#",
+    "#####.###.#.###.#####",
+    "     .#.......#.     ",
+    "#####.#.##-##.#.#####",
+    "      # #   # #      ",
+    "#####.#.#####.#.#####",
+    "     .#.......#.     ",
+    "#####.#.#####.#.#####",
+    "#.........#.........#",
+    "#.###.###.#.###.###.#",
+    "#o..#.....#.....#..o#",
+    "###.#.#.#####.#.#.###",
+    "#.....#...#...#.....#",
+    "#.#########.#######.#",
+    "#...................#",
+    "#####################"
+];
 
-    const width = 21;
-    const squares = [];
+// ======================================================
+// CONFIGURAÇÕES
+// ======================================================
+const MAP_WIDTH = 21;
+const MAP_HEIGHT = 21;
+const MOVE_SPEED = 130;
+
+let currentGhostSpeed = 240;
+let ghostInterval = null;
+
+let score = 0;
+let lives = 3;
+let level = 1;
+let gameRunning = false;
+
+let pacman = { x: 10, y: 11, direction: null, nextDirection: null };
+let ghosts = [];
+
+// Variáveis do Bônus (Cereja Infinita)
+let bonusActive = false;
+let bonusTimer = null;
+let bonusSpawnTimeout = null;
+let bonusPos = { x: 10, y: 8 }; 
+
+const directions = {
+    up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 }
+};
+
+// ======================================================
+// CRIAR TABULEIRO
+// ======================================================
+function createBoard() {
+    board.innerHTML = "";
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            const tile = map[y][x];
+            if (tile === "#") cell.classList.add("wall");
+            else if (tile === ".") cell.classList.add("dot");
+            else if (tile === "o") cell.classList.add("power-dot");
+            board.appendChild(cell);
+        }
+    }
+}
+
+// ======================================================
+// DESENHAR PERSONAGENS E CEREJA
+// ======================================================
+function drawPacman() {
+    document.querySelectorAll(".pacman").forEach(el => el.remove());
+    const cell = board.children[pacman.y * MAP_WIDTH + pacman.x];
+    if (!cell) return;
+    const player = document.createElement("div");
+    player.classList.add("pacman");
+    player.classList.add(pacman.direction ? pacman.direction : "right");
+    cell.appendChild(player);
+}
+
+function drawGhosts() {
+    document.querySelectorAll(".ghost").forEach(el => el.remove());
+    ghosts.forEach(ghost => {
+        if (!ghost.active) return;
+        const cell = board.children[ghost.y * MAP_WIDTH + ghost.x];
+        if (!cell) return;
+        const ghostEl = document.createElement("div");
+        ghostEl.classList.add("ghost");
+        ghostEl.classList.add(ghost.frightened ? "frightened" : ghost.color);
+        cell.appendChild(ghostEl);
+    });
+}
+
+function drawBonus() {
+    document.querySelectorAll(".cherry").forEach(el => el.remove());
+    if (bonusActive) {
+        const cell = board.children[bonusPos.y * MAP_WIDTH + bonusPos.x];
+        if (cell) {
+            const cherryEl = document.createElement("div");
+            cherryEl.classList.add("cherry");
+            cell.appendChild(cherryEl);
+        }
+    }
+}
+
+// ======================================================
+// LÓGICA DA CEREJA ALEATÓRIA (INFINITA)
+// ======================================================
+function getRandomEmptyPosition() {
+    let emptyCells = [];
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            // Evita paredes (#) e o centro da casa dos fantasmas
+            if (map[y][x] !== "#" && !(y >= 8 && y <= 10 && x >= 8 && x <= 12)) {
+                emptyCells.push({ x, y });
+            }
+        }
+    }
+    const randomIndex = Math.floor(Math.random() * emptyCells.length);
+    return emptyCells[randomIndex];
+}
+
+function scheduleNextBonus(delay = 3000) {
+    if (bonusSpawnTimeout) clearTimeout(bonusSpawnTimeout);
+    bonusSpawnTimeout = setTimeout(spawnBonus, delay);
+}
+
+function spawnBonus() {
+    if (!gameRunning) return;
     
-    // Estado do Jogo
-    let score = 0;
-    let lives = 3;
-    let level = 1;
-    let dotsLeft = 0;
-    let gameInterval = null;
-    let ghostInterval = null;
-    let cherryTimeout = null;
-    let isGameOver = false;
-
-    // Estado do Pac-Man
-    let pacmanCurrentIndex = 325; // Posição inicial no grid
-    let pacmanVelocity = 0;
-    let nextVelocity = 0;
-
-    // Fantasmas
-    class Ghost {
-        constructor(className, startIndex, speed) {
-            this.className = className;
-            this.startIndex = startIndex;
-            this.currentIndex = startIndex;
-            this.speed = speed;
-            this.timerId = NaN;
-            this.isFrightened = false;
+    bonusPos = getRandomEmptyPosition();
+    bonusActive = true;
+    drawBonus();
+    
+    if (bonusTimer) clearTimeout(bonusTimer);
+    
+    // Se não for coletada em 8 segundos, some e agenda a próxima cereja em 3 segundos
+    bonusTimer = setTimeout(() => {
+        if (bonusActive) {
+            bonusActive = false;
+            drawBonus();
+            scheduleNextBonus(3000);
         }
+    }, 8000);
+}
+
+function spawnGhostFromCherry() {
+    const colors = ["red", "pink", "cyan", "orange"];
+    const types = ["chase", "ambush", "flank", "coward"];
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    
+    // Adiciona um fantasma novo ao jogo
+    ghosts.push({
+        x: 10,
+        y: 9,
+        color: colors[randomIndex],
+        direction: "up",
+        frightened: false,
+        active: true,
+        type: types[randomIndex]
+    });
+
+    updateGhostSpeed();
+    drawGhosts();
+}
+
+// ======================================================
+// VERIFICAR PAREDE E MOVIMENTO
+// ======================================================
+function isWall(x, y) {
+    if (x < 0 || x >= MAP_WIDTH) return false;
+    if (y < 0 || y >= MAP_HEIGHT) return true;
+    return map[y][x] === "#";
+}
+
+function canMove(direction) {
+    if (!direction) return false;
+    const move = directions[direction];
+    return !isWall(pacman.x + move.x, pacman.y + move.y);
+}
+
+// ======================================================
+// COLETÁVEIS E MODO POWER
+// ======================================================
+let powerTimer = null;
+
+function collectDot() {
+    const cell = board.children[pacman.y * MAP_WIDTH + pacman.x];
+    if (!cell) return;
+
+    if (cell.classList.contains("dot")) {
+        cell.classList.remove("dot");
+        score += 10;
+        scoreElement.textContent = score;
     }
 
-    const ghosts = [
-        new Ghost('red', 220, 250),
-        new Ghost('pink', 221, 300),
-        new Ghost('cyan', 222, 350),
-        new Ghost('orange', 223, 400)
+    if (cell.classList.contains("power-dot")) {
+        cell.classList.remove("power-dot");
+        score += 1000;
+        scoreElement.textContent = score;
+        triggerPowerMode();
+    }
+    
+    // Pegar cereja -> +10.000 pontos, +1 Fantasma e agenda a próxima em 2 segundos
+    if (bonusActive && pacman.x === bonusPos.x && pacman.y === bonusPos.y) {
+        bonusActive = false;
+        if (bonusTimer) clearTimeout(bonusTimer);
+        
+        score += 10000;
+        scoreElement.textContent = score;
+        drawBonus();
+        
+        spawnGhostFromCherry();
+        scheduleNextBonus(2000);
+    }
+
+    checkWinCondition();
+}
+
+function triggerPowerMode() {
+    ghosts.forEach(g => { if (g.active) g.frightened = true; });
+    drawGhosts();
+    if (powerTimer) clearTimeout(powerTimer);
+    powerTimer = setTimeout(() => {
+        ghosts.forEach(g => g.frightened = false);
+        drawGhosts();
+    }, 7000);
+}
+
+// ======================================================
+// MOVER PAC-MAN E FANTASMAS
+// ======================================================
+function movePacman() {
+    if (!gameRunning) return;
+
+    if (canMove(pacman.nextDirection)) pacman.direction = pacman.nextDirection;
+    if (!pacman.direction || !canMove(pacman.direction)) return;
+
+    const move = directions[pacman.direction];
+    pacman.x += move.x;
+    pacman.y += move.y;
+
+    if (pacman.x < 0) pacman.x = MAP_WIDTH - 1;
+    else if (pacman.x >= MAP_WIDTH) pacman.x = 0;
+
+    collectDot();
+    drawPacman();
+    checkCollision();
+}
+
+function createGhosts() {
+    ghosts = [
+        { x: 9, y: 9, color: "red", direction: "left", frightened: false, active: true, type: "chase" },
+        { x: 10, y: 9, color: "pink", direction: "right", frightened: false, active: true, type: "ambush" },
+        { x: 10, y: 10, color: "cyan", direction: "up", frightened: false, active: true, type: "flank" },
+        { x: 11, y: 9, color: "orange", direction: "down", frightened: false, active: true, type: "coward" }
+    ];
+}
+
+function moveGhosts() {
+    if (!gameRunning) return;
+
+    ghosts.forEach(ghost => {
+        if (!ghost.active) return;
+        const possibleDirections = [];
+
+        Object.keys(directions).forEach(dir => {
+            const move = directions[dir];
+            if (!isWall(ghost.x + move.x, ghost.y + move.y)) possibleDirections.push(dir);
+        });
+
+        const opposites = { up: "down", down: "up", left: "right", right: "left" };
+        let options = possibleDirections.filter(dir => dir !== opposites[ghost.direction]);
+        if (options.length === 0) options = possibleDirections;
+
+        let chosenDirection;
+        if (ghost.frightened) {
+            chosenDirection = options[Math.floor(Math.random() * options.length)];
+        } else {
+            let targetX = pacman.x;
+            let targetY = pacman.y;
+
+            if (ghost.type === "ambush" && pacman.direction) {
+                targetX += directions[pacman.direction].x * 3;
+                targetY += directions[pacman.direction].y * 3;
+            } else if (ghost.type === "flank" && pacman.direction) {
+                targetX += directions[pacman.direction].x * 2;
+                targetY += directions[pacman.direction].y * 2;
+            } else if (ghost.type === "coward") {
+                const dist = Math.abs(ghost.x - pacman.x) + Math.abs(ghost.y - pacman.y);
+                if (dist < 4) { targetX = 0; targetY = MAP_HEIGHT; }
+            }
+
+            options.sort((a, b) => {
+                const distA = Math.abs((ghost.x + directions[a].x) - targetX) + Math.abs((ghost.y + directions[a].y) - targetY);
+                const distB = Math.abs((ghost.x + directions[b].x) - targetX) + Math.abs((ghost.y + directions[b].y) - targetY);
+                return distA - distB;
+            });
+
+            const defeatedCount = ghosts.filter(g => !g.active).length;
+            const precisionRate = 0.95 + (defeatedCount * 0.015);
+
+            chosenDirection = (options.length > 0 && Math.random() < precisionRate) ? options[0] : options[Math.floor(Math.random() * options.length)];
+        }
+
+        const move = directions[chosenDirection];
+        ghost.x += move.x;
+        ghost.y += move.y;
+
+        if (ghost.x < 0) ghost.x = MAP_WIDTH - 1;
+        if (ghost.x >= MAP_WIDTH) ghost.x = 0;
+
+        ghost.direction = chosenDirection;
+    });
+
+    drawGhosts();
+    checkCollision();
+}
+
+// ======================================================
+// VELOCIDADE DOS FANTASMAS
+// ======================================================
+function updateGhostSpeed() {
+    if (ghostInterval) clearInterval(ghostInterval);
+
+    const defeatedCount = ghosts.filter(g => !g.active).length;
+    currentGhostSpeed = Math.max(100, 240 - (defeatedCount * 35));
+
+    ghostInterval = setInterval(moveGhosts, currentGhostSpeed);
+}
+
+// ======================================================
+// COLISÕES E ESTADO DO JOGO
+// ======================================================
+function checkCollision() {
+    ghosts.forEach(ghost => {
+        if (!ghost.active) return;
+        if (ghost.x === pacman.x && ghost.y === pacman.y) {
+            if (ghost.frightened) {
+                ghost.active = false;
+                score += 200;
+                scoreElement.textContent = score;
+                
+                updateGhostSpeed();
+                drawGhosts();
+                checkWinCondition();
+            } else {
+                loseLife();
+            }
+        }
+    });
+}
+
+function checkWinCondition() {
+    const allGhostsDefeated = ghosts.every(g => !g.active);
+    const remainingDots = document.querySelectorAll(".dot, .power-dot").length;
+    if (allGhostsDefeated || remainingDots === 0) endGame("VOCÊ VENCEU!");
+}
+
+function loseLife() {
+    lives--;
+    livesElement.textContent = lives;
+    if (lives <= 0) return endGame("GAME OVER");
+    gameRunning = false;
+    setTimeout(() => { resetPositions(); gameRunning = true; }, 1200);
+}
+
+function endGame(title) {
+    gameRunning = false;
+    if (powerTimer) clearTimeout(powerTimer);
+    if (bonusSpawnTimeout) clearTimeout(bonusSpawnTimeout);
+    if (bonusTimer) clearTimeout(bonusTimer);
+    if (ghostInterval) clearInterval(ghostInterval);
+    
+    message.classList.remove("hidden");
+    message.querySelector("h2").textContent = title;
+    message.querySelector("p").textContent = `Pontuação final: ${score}`;
+    startButton.textContent = "JOGAR NOVAMENTE";
+}
+
+function resetPositions() {
+    pacman.x = 10;
+    pacman.y = 11;
+    pacman.direction = null;
+    pacman.nextDirection = null;
+    
+    bonusActive = false;
+    drawBonus();
+
+    if (powerTimer) clearTimeout(powerTimer);
+
+    // Reposiciona apenas os fantasmas ativos no jogo
+    let ghostSpawnPositions = [
+        { x: 9, y: 9 }, { x: 10, y: 9 }, { x: 10, y: 10 }, { x: 11, y: 9 }
     ];
 
-    // 1. Criar o Tabuleiro
-    function createBoard() {
-        board.innerHTML = '';
-        squares.length = 0;
-        dotsLeft = 0;
-
-        for (let i = 0; i < layout.length; i++) {
-            const square = document.createElement('div');
-            square.classList.add('cell');
-            board.appendChild(square);
-            squares.push(square);
-
-            if (layout[i] === 1) {
-                square.classList.add('wall');
-            } else if (layout[i] === 0) {
-                square.classList.add('dot');
-                dotsLeft++;
-            } else if (layout[i] === 3) {
-                square.classList.add('power-dot');
-                dotsLeft++;
-            }
+    ghosts.forEach((ghost, index) => {
+        if (ghost.active) {
+            const pos = ghostSpawnPositions[index % ghostSpawnPositions.length];
+            ghost.x = pos.x;
+            ghost.y = pos.y;
+            ghost.frightened = false;
         }
+    });
+
+    updateGhostSpeed();
+    drawPacman();
+    drawGhosts();
+}
+
+// ======================================================
+// CONTROLES E INICIALIZAÇÃO
+// ======================================================
+document.addEventListener("keydown", event => {
+    const keys = {
+        ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+        w: "up", W: "up", s: "down", S: "down", a: "left", A: "left", d: "right", D: "right"
+    };
+    if (keys[event.key]) {
+        pacman.nextDirection = keys[event.key];
+        event.preventDefault();
     }
-
-    // 2. Controles de Entrada
-    function handleKeyDown(e) {
-        switch (e.key) {
-            case 'ArrowLeft':
-            case 'a':
-            case 'A':
-                nextVelocity = -1;
-                break;
-            case 'ArrowUp':
-            case 'w':
-            case 'W':
-                nextVelocity = -width;
-                break;
-            case 'ArrowRight':
-            case 'd':
-            case 'D':
-                nextVelocity = 1;
-                break;
-            case 'ArrowDown':
-            case 's':
-            case 'S':
-                nextVelocity = width;
-                break;
-        }
-    }
-
-    // 3. Loop do Pac-Man
-    function movePacman() {
-        // Tenta mudar para a direção desejada se não houver parede
-        if (nextVelocity !== 0 && !squares[pacmanCurrentIndex + nextVelocity].classList.contains('wall')) {
-            pacmanVelocity = nextVelocity;
-        }
-
-        // Aplica o movimento se o caminho estiver livre
-        if (pacmanVelocity !== 0 && !squares[pacmanCurrentIndex + pacmanVelocity].classList.contains('wall')) {
-            // Remove a classe do Pac-Man do local atual
-            squares[pacmanCurrentIndex].classList.remove('pacman', 'right', 'left', 'up', 'down');
-            
-            // Lógica do Túnel (Teleporte)
-            if (pacmanCurrentIndex === 210 && pacmanVelocity === -1) {
-                pacmanCurrentIndex = 230;
-            } else if (pacmanCurrentIndex === 230 && pacmanVelocity === 1) {
-                pacmanCurrentIndex = 210;
-            } else {
-                pacmanCurrentIndex += pacmanVelocity;
-            }
-
-            // Adiciona a classe no novo local
-            squares[pacmanCurrentIndex].classList.add('pacman');
-
-            // Atualiza a rotação visual
-            if (pacmanVelocity === 1) squares[pacmanCurrentIndex].classList.add('right');
-            if (pacmanVelocity === -1) squares[pacmanCurrentIndex].classList.add('left');
-            if (pacmanVelocity === -width) squares[pacmanCurrentIndex].classList.add('up');
-            if (pacmanVelocity === width) squares[pacmanCurrentIndex].classList.add('down');
-
-            // Interações
-            eatenDot();
-            eatenPowerDot();
-            eatenCherry();
-            checkGhostCollision();
-        }
-    }
-
-    // Comendo itens
-    function eatenDot() {
-        if (squares[pacmanCurrentIndex].classList.contains('dot')) {
-            squares[pacmanCurrentIndex].classList.remove('dot');
-            score += 10;
-            dotsLeft--;
-            scoreDisplay.textContent = score;
-            checkWin();
-        }
-    }
-
-    function eatenPowerDot() {
-        if (squares[pacmanCurrentIndex].classList.contains('power-dot')) {
-            squares[pacmanCurrentIndex].classList.remove('power-dot');
-            score += 50;
-            dotsLeft--;
-            scoreDisplay.textContent = score;
-            
-            // Deixa os fantasmas assustados
-            ghosts.forEach(ghost => {
-                ghost.isFrightened = true;
-                squares[ghost.currentIndex].classList.add('frightened');
-            });
-
-            setTimeout(unfrightenGhosts, 8000);
-            checkWin();
-        }
-    }
-
-    function unfrightenGhosts() {
-        ghosts.forEach(ghost => {
-            ghost.isFrightened = false;
-            squares[ghost.currentIndex].classList.remove('frightened');
-        });
-    }
-
-    function spawnCherry() {
-        if (isGameOver) return;
-        const availableIndexes = [];
-        squares.forEach((square, idx) => {
-            if (!square.classList.contains('wall') && 
-                !square.classList.contains('pacman') && 
-                !square.classList.contains('ghost')) {
-                availableIndexes.push(idx);
-            }
-        });
-
-        if (availableIndexes.length > 0) {
-            const randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
-            squares[randomIndex].classList.add('cherry');
-
-            // A cereja desaparece após 10 segundos se não for comida
-            setTimeout(() => {
-                if (squares[randomIndex]) squares[randomIndex].classList.remove('cherry');
-            }, 10000);
-        }
-
-        // Tenta gerar outra cereja em 20-30 segundos
-        cherryTimeout = setTimeout(spawnCherry, Math.random() * 10000 + 20000);
-    }
-
-    function eatenCherry() {
-        if (squares[pacmanCurrentIndex].classList.contains('cherry')) {
-            squares[pacmanCurrentIndex].classList.remove('cherry');
-            score += 100;
-            scoreDisplay.textContent = score;
-        }
-    }
-
-    // 4. Inteligência Artificial dos Fantasmas
-    function moveGhost(ghost) {
-        const directions = [-1, +1, -width, +width];
-        
-        ghost.timerId = setInterval(() => {
-            // Filtra movimentações válidas (sem bater na parede nem em outro fantasma)
-            const validDirections = directions.filter(dir => {
-                const nextPos = ghost.currentIndex + dir;
-                return !squares[nextPos].classList.contains('wall') && 
-                       !squares[nextPos].classList.contains('ghost');
-            });
-
-            if (validDirections.length > 0) {
-                // Remove visual do fantasma da célula anterior
-                squares[ghost.currentIndex].classList.remove('ghost', ghost.className, 'frightened');
-
-                let nextMove;
-
-                // Se o fantasma estiver assustado, move-se aleatoriamente
-                if (ghost.isFrightened) {
-                    nextMove = validDirections[Math.floor(Math.random() * validDirections.length)];
-                } else {
-                    // Persegue o Pac-Man calculando a distância até ele
-                    nextMove = validDirections.reduce((bestDir, dir) => {
-                        const currentDist = getDistance(ghost.currentIndex + dir, pacmanCurrentIndex);
-                        const bestDist = getDistance(ghost.currentIndex + bestDir, pacmanCurrentIndex);
-                        return currentDist < bestDist ? dir : bestDir;
-                    }, validDirections[0]);
-                }
-
-                ghost.currentIndex += nextMove;
-
-                // Aplica visual na nova célula
-                squares[ghost.currentIndex].classList.add('ghost', ghost.className);
-                if (ghost.isFrightened) {
-                    squares[ghost.currentIndex].classList.add('frightened');
-                }
-            }
-
-            checkGhostCollision();
-        }, ghost.speed);
-    }
-
-    function getDistance(index1, index2) {
-        const x1 = index1 % width;
-        const y1 = Math.floor(index1 / width);
-        const x2 = index2 % width;
-        const y2 = Math.floor(index2 / width);
-        return Math.hypot(x2 - x1, y2 - y1);
-    }
-
-    // 5. Colisão e Vidas
-    function checkGhostCollision() {
-        ghosts.forEach(ghost => {
-            if (ghost.currentIndex === pacmanCurrentIndex) {
-                if (ghost.isFrightened) {
-                    // Pac-Man come o fantasma
-                    squares[ghost.currentIndex].classList.remove('ghost', ghost.className, 'frightened');
-                    ghost.currentIndex = ghost.startIndex;
-                    score += 200;
-                    scoreDisplay.textContent = score;
-                    ghost.isFrightened = false;
-                    squares[ghost.currentIndex].classList.add('ghost', ghost.className);
-                } else {
-                    // Fantasma pega o Pac-Man
-                    handlePacmanDeath();
-                }
-            }
-        });
-    }
-
-    function handlePacmanDeath() {
-        lives--;
-        livesDisplay.textContent = lives;
-
-        if (lives <= 0) {
-            triggerGameOver(false);
-        } else {
-            resetPositions();
-        }
-    }
-
-    function resetPositions() {
-        // Limpa Pac-Man do local atual
-        squares[pacmanCurrentIndex].classList.remove('pacman', 'right', 'left', 'up', 'down');
-        pacmanCurrentIndex = 325;
-        pacmanVelocity = 0;
-        nextVelocity = 0;
-        squares[pacmanCurrentIndex].classList.add('pacman');
-
-        // Reseta fantasmas
-        ghosts.forEach(ghost => {
-            squares[ghost.currentIndex].classList.remove('ghost', ghost.className, 'frightened');
-            ghost.currentIndex = ghost.startIndex;
-            squares[ghost.currentIndex].classList.add('ghost', ghost.className);
-        });
-    }
-
-    // 6. Condições de Vitória / Derrota
-    function checkWin() {
-        if (dotsLeft === 0) {
-            level++;
-            levelDisplay.textContent = level;
-            triggerGameOver(true);
-        }
-    }
-
-    function triggerGameOver(isWin) {
-        isGameOver = true;
-        clearInterval(gameInterval);
-        ghosts.forEach(ghost => clearInterval(ghost.timerId));
-        clearTimeout(cherryTimeout);
-
-        const titleText = messageContainer.querySelector('h2');
-        const descText = messageContainer.querySelector('p');
-
-        if (isWin) {
-            titleText.textContent = "VOCÊ VENCEU!";
-            titleText.style.color = "#4ade80";
-            descText.textContent = `Avançando para o nível ${level}...`;
-            startButton.textContent = "PRÓXIMO NÍVEL";
-        } else {
-            titleText.textContent = "GAME OVER";
-            titleText.style.color = "#ef4444";
-            descText.textContent = `Pontuação Final: ${score}`;
-            startButton.textContent = "JOGAR NOVAMENTE";
-        }
-
-        messageContainer.classList.remove('hidden');
-    }
-
-    // 7. Inicialização do Jogo
-    function startGame() {
-        if (isGameOver && lives <= 0) {
-            score = 0;
-            lives = 3;
-            level = 1;
-            scoreDisplay.textContent = score;
-            livesDisplay.textContent = lives;
-            levelDisplay.textContent = level;
-        }
-
-        isGameOver = false;
-        createBoard();
-        resetPositions();
-
-        // Esconde menu inicial
-        messageContainer.classList.add('hidden');
-
-        // Registra evento do teclado
-        document.removeEventListener('keydown', handleKeyDown);
-        document.addEventListener('keydown', handleKeyDown);
-
-        // Inicia loops do jogo
-        clearInterval(gameInterval);
-        gameInterval = setInterval(movePacman, 150);
-
-        ghosts.forEach(ghost => {
-            clearInterval(ghost.timerId);
-            moveGhost(ghost);
-        });
-
-        clearTimeout(cherryTimeout);
-        cherryTimeout = setTimeout(spawnCherry, 15000);
-    }
-
-    startButton.addEventListener('click', startGame);
 });
+
+function startGame() {
+    score = 0; lives = 3; level = 1;
+    scoreElement.textContent = score;
+    livesElement.textContent = lives;
+    levelElement.textContent = level;
+
+    createBoard();
+    createGhosts();
+    resetPositions();
+
+    message.classList.add("hidden");
+    gameRunning = true;
+    startButton.textContent = "REINICIAR";
+    
+    // Começa a rotina das cerejas infinitas após 3 segundos
+    scheduleNextBonus(3000);
+}
+
+startButton.addEventListener("click", startGame);
+
+createBoard();
+createGhosts();
+resetPositions();
+setInterval(movePacman, MOVE_SPEED);

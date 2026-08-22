@@ -8,7 +8,6 @@ body {
     justify-content: center;
     height: 100vh;
     margin: 0;
-    overflow: hidden;
 }
 
 header {
@@ -84,7 +83,6 @@ header {
     font-family: 'Courier New', Courier, monospace;
 }
 
-/* CONTAINER E TABULEIRO DO JOGO */
 #game-container {
     position: relative;
     border: 3px solid #3b82f6;
@@ -106,7 +104,7 @@ header {
     position: relative;
 }
 
-/* PAREDES COM VISUAL NEON */
+/* Paredes com visual de Neon */
 .wall {
     background-color: #1e3a8a;
     border: 1px solid #3b82f6;
@@ -114,7 +112,7 @@ header {
     border-radius: 3px;
 }
 
-/* BOLINHAS SIMPLES */
+/* Bolinhas normais brilhantes */
 .dot::after {
     content: "";
     width: 5px;
@@ -128,7 +126,7 @@ header {
     box-shadow: 0 0 6px #fde047;
 }
 
-/* SUPER BOLINHAS (POWER DOTS) */
+/* Super Bolinhas (Bônus) */
 .power-dot::after {
     content: "";
     width: 12px;
@@ -148,7 +146,7 @@ header {
     to { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
 }
 
-/* PAC-MAN */
+/* Pac-Man Moderno com Efeito Brilho */
 .pacman {
     width: 17px;
     height: 17px;
@@ -184,7 +182,7 @@ header {
 .pacman.left { transform: translate(-50%, -50%) rotate(180deg); }
 .pacman.up { transform: translate(-50%, -50%) rotate(270deg); }
 
-/* FANTASMAS */
+/* Fantasmas Estilizados */
 .ghost {
     width: 17px;
     height: 17px;
@@ -215,7 +213,6 @@ header {
 .cyan { background-color: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
 .orange { background-color: #fb923c; box-shadow: 0 0 8px #fb923c; }
 
-/* MODO ASSUSTADO (FRIGHTENED) */
 .frightened {
     background-color: #3b82f6 !important;
     box-shadow: 0 0 10px #3b82f6 !important;
@@ -228,7 +225,7 @@ header {
     height: 3px;
 }
 
-/* CEREJA DE BÔNUS */
+/* Cereja de Bônus Neon */
 .cherry {
     width: 9px;
     height: 9px;
@@ -273,7 +270,7 @@ header {
     to { transform: translate(-50%, -50%) scale(1.1); }
 }
 
-/* TELA DE ALERTA E INÍCIO */
+/* Telas de Alerta / Fim de Jogo */
 #message {
     position: absolute;
     top: 50%;
@@ -286,31 +283,20 @@ header {
     text-align: center;
     z-index: 20;
     box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80%;
-    max-width: 280px;
 }
 
 #message h2 {
-    margin: 0 0 5px 0;
-    color: #facc15;
+    margin-top: 0;
+    color: #38bdf8;
     letter-spacing: 1px;
-    font-size: 20px;
 }
 
-#message p {
-    color: #94a3b8;
-    font-size: 14px;
-    margin: 0 0 15px 0;
-}
-
-#message.hidden {
-    display: none !important;
+.hidden {
+    display: none;
 }
 
 #start-button {
+    margin-top: 15px;
     padding: 10px 24px;
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     color: white;
@@ -328,4 +314,23 @@ header {
     background: linear-gradient(135deg, #2563eb, #1e40af);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
     transform: translateY(-1px);
+}#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(3, 7, 18, 0.95);
+    padding: 25px 40px;
+    border: 2px solid #38bdf8;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 20;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#message.hidden {
+    display: none !important;
 }
